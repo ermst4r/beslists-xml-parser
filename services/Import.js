@@ -7,6 +7,7 @@ var Import = function () {
 
     var parseFeed = function (connection,feedUrl,branch_id) {
         request.get(feedUrl, function (error, response, body) {
+
             if (!error && response.statusCode == 200) {
                 parseString(body, function (err, result) {
                    for(var i = 0; i <result.producten.product.length; i ++ ) {
@@ -37,12 +38,22 @@ var Import = function () {
 
 
     this.parseFeedWrapper = function(connection) {
+
+
         var sql = "SELECT * FROM branches";
         connection.query(sql, function(err, rows, fields) {
             if (err) {
                 console.log(err);
             } else {
-               rows.forEach()
+               rows.forEach(function(item) {
+                   connection.query('DELETE FROM feed_data WHERE branch_id ="'+item.branch_id+'"', function (err, result) {
+                       if (err) throw err;
+                       console.log('deleted ' + result.affectedRows + ' rows');
+                   })
+
+                   console.log('re-add feed data');
+                   parseFeed(connection,item.branch_feed,item.branch_id);
+               });
             }
         });
     }

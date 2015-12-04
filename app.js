@@ -21,12 +21,13 @@ var connectionString = {
 
 var connection = mysql.createConnection(connectionString);
 connection.connect();
+// add the feeds in the database
 //Import.parseFeedWrapper(connection);
-//Import.parseFeed(connection,'http://sandbox.ermst4r.nl/test.xml',1);
 
 
-
-//Generatexml.productXmlOutput(connection);
+// generate the xml output
+Generatexml.productXmlOutput(connection);
+// add the new order to the database
 //Beslist.parseOrders(connection);
 app.listen(port);
 console.log('Magic happens on port ' + port);
