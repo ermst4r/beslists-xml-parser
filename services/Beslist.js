@@ -2,7 +2,7 @@ var fs = require('fs');
 var async = require("async");
 var request = require("request");
 var parseString = require('xml2js').parseString;
-var file_url = 'https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum=2daa1c5c1c7638f0c9707a7bb85f1b90&client_id=18132&shop_id=532600&date_from=2015-01-01&date_to=2015-11-15&output_type=test&test_orders=3';
+var file_url = 'https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum=2daa1c5c1c7638f0c9707a7bb85f1b90&client_id=18132&shop_id=532600&date_from=2015-01-01&date_to=2015-11-15&output_type=test&test_orders=1';
 
 var Beslist = function () {
 

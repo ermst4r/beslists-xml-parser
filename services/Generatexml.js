@@ -1,8 +1,43 @@
 var request = require("request");
 var builder = require('xmlbuilder');
 var async = require('async');
+
+
+
+
+
+
 var Generatexml = function () {
 
+
+
+
+
+    var convertDec = function(input) {
+
+        var output = ''
+        var input = input.toString();
+        for (var i=0; i < input.length; i++) {
+            output += input[i].charCodeAt(0);
+        }
+        return output;
+
+    }
+
+
+    var generateCustomerChecksum = function(checksumString) {
+        var token ='423' // default value, because key is coli, and when we convert this to ascci together its 423
+        var webClient='01'; // change the webclient to any value you wish
+        var finalCheckSum = webClient+checksumString;
+        var calculationOfAsciiCodes = 0;
+        finalCheckSum.split("").forEach(function(row) {
+            calculationOfAsciiCodes = calculationOfAsciiCodes + parseInt(row.charCodeAt(0));
+        });
+        var finalResult = (calculationOfAsciiCodes % token ) * token;
+        return convertDec(finalResult);
+
+
+    }
 
 
 // error ere
@@ -12,7 +47,8 @@ var Generatexml = function () {
             if (err) return next(err);
 
             rows.forEach(function(row) {
-                var xml = builder.create('root');
+                var checksumString = '';
+                var xml = builder.create('root',{encoding:'UTF-8'});
                 xml.ele('first_name',row.customer_shipping_firstname);
                 xml.ele('last_name',row.customer_shipping_last_name);
                 xml.ele('initials');
@@ -42,8 +78,8 @@ var Generatexml = function () {
                 }
                 // shipping address
                 var shippingAddress =  addresses.ele('address')
-                shippingAddress.ele('seq_nr',0);
-                shippingAddress.ele('type','B');
+                shippingAddress.ele('seq_nr',1);
+                shippingAddress.ele('type','A');
                 shippingAddress.ele('street',row.customer_shipping_adress);
                 shippingAddress.ele('nr',row.customer_shipping_adress_number);
                 shippingAddress.ele('addition',row.customer_shipping_adress_additional);
@@ -54,7 +90,8 @@ var Generatexml = function () {
                 } else  {
                     shippingAddress.ele('country','BE');
                 }
-
+                checksumString=row.customer_shipping_firstname + row.customer_shipping_last_name + row.customer_phone + row.customer_email;
+                console.log(generateCustomerChecksum(checksumString));
                 console.log(xml.end({ pretty: true}));
 
             });

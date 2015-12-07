@@ -34,7 +34,7 @@ connection.connect();
 //Generatexml.xmlOrderOutput(connection);
 Generatexml.xmlCustomerOutput(connection);
 // add the new order to the database
-//Beslist.parseOrders(connection);
+Beslist.parseOrders(connection);
 app.listen(port);
 console.log('Magic happens on port ' + port);
 
