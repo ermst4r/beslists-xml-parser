@@ -46,10 +46,10 @@ var Import = function () {
                 console.log(err);
             } else {
                rows.forEach(function(item) {
-                   connection.query('DELETE FROM feed_data WHERE branch_id ="'+item.branch_id+'"', function (err, result) {
-                       if (err) throw err;
-                       console.log('deleted ' + result.affectedRows + ' rows');
-                   })
+                   //connection.query('DELETE FROM feed_data WHERE branch_id ="'+item.branch_id+'"', function (err, result) {
+                   //    if (err) throw err;
+                   //    console.log('deleted ' + result.affectedRows + ' rows');
+                   //})
 
                    console.log('re-add feed data');
                    parseFeed(connection,item.branch_feed,item.branch_id);

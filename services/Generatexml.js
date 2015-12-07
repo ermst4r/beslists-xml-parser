@@ -5,14 +5,66 @@ var Generatexml = function () {
 
 
 
+// error ere
+    this.xmlCustomerOutput = function(connection) {
+        var sql = "SELECT * FROM orders AS O LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number)";
+        connection.query(sql, function(err, rows, fields) {
+            if (err) return next(err);
 
+            rows.forEach(function(row) {
+                var xml = builder.create('root');
+                xml.ele('first_name',row.customer_shipping_firstname);
+                xml.ele('last_name',row.customer_shipping_last_name);
+                xml.ele('initials');
+                xml.ele('prefix',row.customer_shipping_last_name_insertion);
+                xml.ele('customer_type','P');
+                if(row.customer_shipping_sex == 'm') {
+                    xml.ele('title','Dhr.');
+                } else {
+                    xml.ele('title','Mevr.');
+                }
+                xml.ele('phone',row.customer_phone);
+                xml.ele('email',row.customer_email);
+                // invoice addres
+                var addresses =  xml.ele('addresses')
+                var invoiceAddres =  addresses.ele('address')
+                invoiceAddres.ele('seq_nr',0);
+                invoiceAddres.ele('type','B');
+                invoiceAddres.ele('street',row.customer_invoice_address);
+                invoiceAddres.ele('nr',row.customer_invoice_adress_number);
+                invoiceAddres.ele('addition',row.customer_invoice_adress_number_add);
+                invoiceAddres.ele('postal_code',row.customer_invoice_zip);
+                invoiceAddres.ele('city',row.customer_invoice_city);
+                if(row.customer_invoice_country =='Nederland') {
+                    invoiceAddres.ele('country','NL');
+                } else  {
+                    invoiceAddres.ele('country','BE');
+                }
+                // shipping address
+                var shippingAddress =  addresses.ele('address')
+                shippingAddress.ele('seq_nr',0);
+                shippingAddress.ele('type','B');
+                shippingAddress.ele('street',row.customer_shipping_adress);
+                shippingAddress.ele('nr',row.customer_shipping_adress_number);
+                shippingAddress.ele('addition',row.customer_shipping_adress_additional);
+                shippingAddress.ele('postal_code',row.customer_shipping_zip);
+                shippingAddress.ele('city',row.customer_shipping_city);
+                if(row.customer_shipping_country =='Nederland') {
+                    shippingAddress.ele('country','NL');
+                } else  {
+                    shippingAddress.ele('country','BE');
+                }
 
+                console.log(xml.end({ pretty: true}));
 
+            });
 
+        });
 
-    this.productXmlOutput = function (connection) {
+    }
+
+    this.xmlOrderOutput = function (connection) {
         async.series([
-
             // first load this
             function(callback){
                 var sql    = "SELECT * FROM orders As o LEFT JOIN payment As p ON o.order_number = p.fk_order_number LEFT JOIN customers As c ON o.order_number = c.fk_order_number";
@@ -30,11 +82,7 @@ var Generatexml = function () {
                 });
             }
 
-
         ], function(error, results) {
-
-            //console.log(results);
-
             results[0].forEach(function(item) {
                 var xml = builder.create('root');
                 var totalShopAmount = parseFloat(item.price) + parseFloat(item.shipping);
@@ -75,7 +123,6 @@ var Generatexml = function () {
                     var counter = 1;
                     productRows.forEach(function(productItem) {
 
-
                         // Get some product specs from the feed against the beslist feed
                         var wareHouseId = '';
                         var commission_code = '';
@@ -92,11 +139,8 @@ var Generatexml = function () {
                                 verzendMethode = items.verzendMethode;
                             }
                         });
-
-
                         var orderRow = orderRows.ele('order_row');
                         orderRow.ele('rownr',counter);
-
                         orderRow.ele('row_type','R'); // conditie toevoegen
                         orderRow.ele('article_nr',productItem.bvb_code);
                         orderRow.ele('description',productItem.product_name);
@@ -130,19 +174,10 @@ var Generatexml = function () {
 
                 });
 
-
             });
 
 
-
-
-
         });
-
-
-
-
-
 
     }
 
