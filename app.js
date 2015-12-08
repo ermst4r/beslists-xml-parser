@@ -28,6 +28,10 @@ connection.connect();
 
 
 
+var CronJob = require('cron').CronJob;
+new CronJob('* * * * * *', function() {
+    console.log('You will see this message every second');
+}, null, true, 'America/Los_Angeles');
 
 
 // add the feeds in the database
@@ -38,19 +42,11 @@ connection.connect();
 // add the new order to the database
 //Beslist.parseOrders(connection);
 
-/* Update price API */
-Import.parseFeedUpdateShopPrice(connection);
 
-//async.series([
-//    function(callback) {
-//       console.log("import feed");
-//    }, function (callback) {
-//        console.log("checking");
-//    }
-//
-//], function(err,res) {
-//
-//});
+
+/* Update price API */
+//Import.parseFeedUpdateShopPrice(connection);
+
 
 
 
