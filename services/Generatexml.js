@@ -3,16 +3,9 @@ var builder = require('xmlbuilder');
 var async = require('async');
 
 
-
-
-
-
 var Generatexml = function () {
-
-
-
-
-
+    var token ='423' // default value, because key is coli, and when we convert this to ascci together its 423
+    var webClient='01'; // change the webclient to any value you wish
     var convertDec = function(input) {
 
         var output = ''
@@ -23,11 +16,8 @@ var Generatexml = function () {
         return output;
 
     }
-
-
     var generateCustomerChecksum = function(checksumString) {
-        var token ='423' // default value, because key is coli, and when we convert this to ascci together its 423
-        var webClient='01'; // change the webclient to any value you wish
+
         var finalCheckSum = webClient+checksumString;
         var calculationOfAsciiCodes = 0;
         finalCheckSum.split("").forEach(function(row) {
@@ -36,11 +26,18 @@ var Generatexml = function () {
         var finalResult = (calculationOfAsciiCodes % token ) * token;
         return convertDec(finalResult);
 
+    }
+    var generateOrderChecksum = function(checksumString,customerNr) {
+               var finalCheckSum =  webClient + customerNr + checksumString;
+                var calculationOfAsciiCodes = 0;
+
+                finalCheckSum.split("").forEach(function(row) {
+                    calculationOfAsciiCodes = calculationOfAsciiCodes + parseInt(row.charCodeAt(0));
+                });
+                var finalResult = (calculationOfAsciiCodes % token ) * token;
+                console.log(convertDec(finalResult));
 
     }
-
-
-// error ere
     this.xmlCustomerOutput = function(connection) {
         var sql = "SELECT * FROM orders AS O LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number)";
         connection.query(sql, function(err, rows, fields) {
@@ -99,7 +96,6 @@ var Generatexml = function () {
         });
 
     }
-
     this.xmlOrderOutput = function (connection) {
         async.series([
             // first load this
@@ -126,17 +122,18 @@ var Generatexml = function () {
                 totalShopAmount = Math.round(totalShopAmount * 100) / 100;
                 // callback find ordernumber
                 var timestamp = new Date(item.date_created);
-                var plainDate = timestamp.getUTCFullYear() + '-' +
+                var plainDate = ('00' + timestamp.getUTCDate()).slice(-2) + '-' +
                     ('00' + (timestamp.getUTCMonth()+1)).slice(-2) + '-' +
-                    ('00' + timestamp.getUTCDate()).slice(-2);
-                xml.ele('customer_nr',item.customer_id);
+                    timestamp.getUTCFullYear();
+                var getMinutes = timestamp.getHours()+':'+timestamp.getMinutes()+':'+timestamp.getSeconds();
+                xml.ele('customer_nr',1480517);
                 xml.ele('date',plainDate);
                 xml.ele('delivery_date',plainDate);
-                xml.ele('delivery_time',plainDate);
-                xml.ele('initial_payment_date',timestamp.toISOString().slice(0, 19).replace('T', ' '));
+                xml.ele('delivery_time',plainDate + ' '+getMinutes);
+                xml.ele('initial_payment_date',plainDate);
                 xml.ele('delivery_method',57); //
                 xml.ele('delivery_floor');
-                xml.ele('payment_condition',0063);
+                xml.ele('payment_condition','0063');
                 xml.ele('currency',0);
                 xml.ele('price_type','I');
                 xml.ele('transaction_discount',0);
@@ -158,6 +155,7 @@ var Generatexml = function () {
                 var productSql    = "SELECT * FROM products WHERE fk_order_number = "+ connection.escape(item.order_number);
                 connection.query(productSql, function(productErr, productRows, productFields) {
                     var counter = 1;
+                    var priceChecksum='';
                     productRows.forEach(function(productItem) {
 
                         // Get some product specs from the feed against the beslist feed
@@ -183,6 +181,7 @@ var Generatexml = function () {
                         orderRow.ele('description',productItem.product_name);
                         orderRow.ele('vat_code',2);
                         orderRow.ele('price',productItem.price.toFixed(4).replace('.',','));
+                        priceChecksum += productItem.price.toFixed(4).replace('.',',');
                         orderRow.ele('discount','0,0000');
                         orderRow.ele('quantity',productItem.number_orderd);
                         orderRow.ele('warehouse',wareHouseId);
@@ -207,6 +206,7 @@ var Generatexml = function () {
                     shippingRow.ele('warehouse',5);
                     shippingRow.ele('commission_code',1);
                     shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
+                    generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),1480517);
                     console.log(xml.end({ pretty: true}));
 
                 });
@@ -217,14 +217,7 @@ var Generatexml = function () {
         });
 
     }
-
-
-
-
-
 };
-
-
 module.exports = function () {
     var instance = new Generatexml();
     return instance;

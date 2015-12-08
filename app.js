@@ -31,8 +31,8 @@ connection.connect();
 
 
 // generate the xml output
-//Generatexml.xmlOrderOutput(connection);
-Generatexml.xmlCustomerOutput(connection);
+Generatexml.xmlOrderOutput(connection);
+//Generatexml.xmlCustomerOutput(connection);
 // add the new order to the database
 Beslist.parseOrders(connection);
 app.listen(port);
