@@ -12,6 +12,9 @@ var schedule = require('node-schedule');
 var Beslist = Beslist();
 var Generatexml = Generatexml();
 var Import = Import();
+var dateFormat = require('dateformat');
+
+
 
 var connectionString = {
     host     : 'localhost',
@@ -26,15 +29,32 @@ connection.connect();
 
 
 
+
 // add the feeds in the database
 //Import.parseFeedWrapper(connection);
-
-
 // generate the xml output
-Generatexml.xmlOrderOutput(connection);
+//Generatexml.xmlOrderOutput(connection);
 //Generatexml.xmlCustomerOutput(connection);
 // add the new order to the database
-Beslist.parseOrders(connection);
+//Beslist.parseOrders(connection);
+
+/* Update price API */
+Import.parseFeedUpdateShopPrice(connection);
+
+//async.series([
+//    function(callback) {
+//       console.log("import feed");
+//    }, function (callback) {
+//        console.log("checking");
+//    }
+//
+//], function(err,res) {
+//
+//});
+
+
+
+
 app.listen(port);
 console.log('Magic happens on port ' + port);
 
