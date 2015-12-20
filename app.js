@@ -5,9 +5,12 @@ var http = require('http');
 var util = require('util');
 var mysql = require('mysql');
 var async = require('async');
+
 var Beslist = require('./services/Beslist');
 var Import = require('./services/Import');
 var Generatexml = require('./services/Generatexml');
+var Apirequests = require("./services/Apirequests.js");
+
 var schedule = require('node-schedule');
 var Beslist = Beslist();
 var Generatexml = Generatexml();
@@ -28,10 +31,15 @@ connection.connect();
 
 
 
-var CronJob = require('cron').CronJob;
-new CronJob('* * * * * *', function() {
-    console.log('You will see this message every second');
-}, null, true, 'America/Los_Angeles');
+
+
+//var CronJob = require('cron').CronJob;
+//new CronJob('*/59 * * * * *', function() {
+//
+//}, null, true, 'America/Los_Angeles');
+
+
+
 
 
 // add the feeds in the database
@@ -45,10 +53,9 @@ new CronJob('* * * * * *', function() {
 
 
 /* Update price API */
-//Import.parseFeedUpdateShopPrice(connection);
 
 
-
+Import.parseFeedUpdateShopPrice(connection);
 
 
 app.listen(port);
