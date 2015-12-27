@@ -9,7 +9,7 @@ var async = require('async');
 var Beslist = require('./services/Beslist');
 var Import = require('./services/Import');
 var Generatexml = require('./services/Generatexml');
-var Apirequests = require("./services/Apirequests.js");
+var config = require('./config');
 
 var schedule = require('node-schedule');
 var Beslist = Beslist();
@@ -18,12 +18,11 @@ var Import = Import();
 var dateFormat = require('dateformat');
 
 
-
 var connectionString = {
-    host     : 'localhost',
-    user     : 'root',
-    password : 'root',
-    database : 'poortvliet'
+    host     : config.mysql_hostname,
+    user     : config.mysql_username,
+    password : config.mysql_password,
+    database : config.mysql_database
 };
 
 var connection = mysql.createConnection(connectionString);
@@ -45,17 +44,15 @@ connection.connect();
 // add the feeds in the database
 //Import.parseFeedWrapper(connection);
 // generate the xml output
-Generatexml.xmlOrderOutput(connection);
-//Generatexml.xmlCustomerOutput(connection);
+//Generatexml.xmlOrderOutput(connection);
 // add the new order to the database
-//Beslist.parseOrders(connection);
+Beslist.parseOrders(connection);
+Generatexml.xmlCustomerOutput(connection);
+
+//Import.parseFeedUpdateShopPrice(connection);
 
 
 
-/* Update price API */
-
-
-Import.parseFeedUpdateShopPrice(connection);
 
 
 app.listen(port);

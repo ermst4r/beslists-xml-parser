@@ -1,7 +1,7 @@
 var request = require("request");
 var parseString = require('xml2js').parseString;
 var async = require("async");
-var Apirequests = require("../services/Apirequests");
+var BeslistApi = require("../services/BeslistApi");
 var moment = require('moment');
 var fs = require('fs')
     , Log = require('log')
@@ -120,15 +120,8 @@ var Import = function () {
         var yesterday = moment().subtract(1, 'days');
         var twoDaysAgo =  moment().subtract(2, 'days');
         var today = moment();
-        var itemsByData = new Array();
-
-        var BeslistPriceApi = new Apirequests();
+        var BeslistPriceApi = new BeslistApi();
         async.series([
-
-
-
-
-
             /*
              Krijg data van de branches
              En plaats deze in een loop

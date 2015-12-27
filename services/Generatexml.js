@@ -1,7 +1,11 @@
 var request = require("request");
 var builder = require('xmlbuilder');
 var async = require('async');
-
+var ColijnApi = require("../services/ColijnApi");
+var parseXmlString = require('xml2js').parseString;
+var fs = require('fs')
+    , Log = require('log')
+    , log = new Log('debug', fs.createWriteStream('logs/colijn_addcustomer.log',{'flags':'a'}));
 
 var Generatexml = function () {
     var token ='423' // default value, because key is coli, and when we convert this to ascci together its 423
@@ -40,7 +44,9 @@ var Generatexml = function () {
 
     }
     this.xmlCustomerOutput = function(connection) {
-        var sql = "SELECT * FROM orders AS O LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number)";
+        var sql = "SELECT * FROM orders AS O LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number) WHERE o.response_code IS NULL";
+        var ColijnApiService = new ColijnApi();
+
         connection.query(sql, function(err, rows, fields) {
             if (err) return next(err);
 
@@ -89,8 +95,29 @@ var Generatexml = function () {
                     shippingAddress.ele('country','BE');
                 }
                 checksumString=row.customer_shipping_firstname + row.customer_shipping_last_name + row.customer_phone + row.customer_email;
-                console.log(generateCustomerChecksum(checksumString));
-                console.log(xml.end({ pretty: true}));
+                 ColijnApiService.addCustomer(xml.end({ pretty: false}),generateCustomerChecksum(checksumString),function(xml) {
+                    parseXmlString(xml, function (err, result) {
+                        if(typeof result.root.customer_nr !== 'undefined') {
+                            var apiResponse = parseInt(result.root.customer_nr[0]);
+                            if(!isNaN(apiResponse)) {
+                                log.info("klant toegevoegd, api response : " + apiResponse);
+                                connection.query("UPDATE orders SET response_code='"+apiResponse+"' ,error_message=''  WHERE order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                                    if (updateErr) throw updateErr;
+                                })
+                            } else {
+                                log.emergency("Klant niet toegevoerd, waarde blijkt geen numerieke waarde te zijn. Api response: " + apiResponse);
+                            }
+                        } else {
+                            log.emergency("Error opgetreden met toevoegen van klant. De volgende api response terug gekregen : " + result.root.error_message[0]);
+                            connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                                if (updateErr) throw updateErr;
+                            })
+
+                        }
+
+                    });
+                });
+
 
             });
 
