@@ -12,7 +12,8 @@ var Import = function () {
 
 
 
-    var parseFeed = function (connection,feedUrl,branch_id,table,update) {
+    var parseFeed = function (connection,feedUrl,branch_id,table,update,callback) {
+        var counter = 0;
         request.get(feedUrl, function (error, response, body) {
             var today = moment();
             if (!error && response.statusCode == 200) {
@@ -42,10 +43,12 @@ var Import = function () {
 
                         if(update == false) {
                             connection.query('INSERT INTO '+table+' SET ?', productData, function(err, result) {
-                                if (err) {
-                                    console.log(err);
-                                }
+                                if(err) throw err;
+
                             });
+
+
+
                         } else {
 
                             var sql = 'UPDATE '+ table+ ' SET prijs = '+ connection.escape(result.producten.product[i].Prijs[0]) + ' WHERE branch_id ='+branch_id+'  AND creation_date=\''+today.format('YYYY-MM-DD')+' 00:00:00\' AND unieke_code = '+connection.escape(productData.unieke_code);
@@ -59,6 +62,7 @@ var Import = function () {
                     }
 
                 });
+
             } else {
                 console.log("HTTP error " + error);
             }
@@ -107,7 +111,9 @@ var Import = function () {
                     })
 
                     console.log('re-add feed data');
-                    parseFeed(connection,item.branch_feed,item.branch_id,'feed_data',false);
+                    parseFeed(connection,item.branch_feed,item.branch_id,'feed_data',false,function(res) {
+                        console.log(res);
+                    });
                 });
             }
         });

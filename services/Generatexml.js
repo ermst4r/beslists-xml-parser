@@ -3,13 +3,16 @@ var builder = require('xmlbuilder');
 var async = require('async');
 var ColijnApi = require("../services/ColijnApi");
 var parseXmlString = require('xml2js').parseString;
+var config = require('../config');
 var fs = require('fs')
     , Log = require('log')
-    , log = new Log('debug', fs.createWriteStream('logs/colijn_addcustomer.log',{'flags':'a'}));
+    , log = new Log('debug', fs.createWriteStream('logs/colijnApi.log',{'flags':'a'}));
+
+
 
 var Generatexml = function () {
     var token ='423' // default value, because key is coli, and when we convert this to ascci together its 423
-    var webClient='01'; // change the webclient to any value you wish
+    var webClient=config.colijn_webclient; // change the webclient to any value you wish
     var convertDec = function(input) {
 
         var output = ''
@@ -32,19 +35,18 @@ var Generatexml = function () {
 
     }
     var generateOrderChecksum = function(checksumString,customerNr) {
-               var finalCheckSum =  webClient + customerNr + checksumString;
-        console.log(finalCheckSum);
-                var calculationOfAsciiCodes = 0;
-
-                finalCheckSum.split("").forEach(function(row) {
-                    calculationOfAsciiCodes = calculationOfAsciiCodes + parseInt(row.charCodeAt(0));
-                });
-                var finalResult = (calculationOfAsciiCodes % token ) * token;
-                console.log(convertDec(finalResult));
+        var finalCheckSum =  webClient + customerNr + checksumString;
+        var calculationOfAsciiCodes = 0;
+        finalCheckSum.split("").forEach(function(row) {
+            calculationOfAsciiCodes = calculationOfAsciiCodes + parseInt(row.charCodeAt(0));
+        });
+        var finalResult = (calculationOfAsciiCodes % token ) * token;
+        return convertDec(finalResult);
 
     }
+
     this.xmlCustomerOutput = function(connection) {
-        var sql = "SELECT * FROM orders AS O LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number) WHERE o.response_code IS NULL";
+        var sql = "SELECT * FROM orders AS o LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number) WHERE c.response_code IS NULL";
         var ColijnApiService = new ColijnApi();
 
         connection.query(sql, function(err, rows, fields) {
@@ -95,13 +97,13 @@ var Generatexml = function () {
                     shippingAddress.ele('country','BE');
                 }
                 checksumString=row.customer_shipping_firstname + row.customer_shipping_last_name + row.customer_phone + row.customer_email;
-                 ColijnApiService.addCustomer(xml.end({ pretty: false}),generateCustomerChecksum(checksumString),function(xml) {
+               ColijnApiService.addCustomer(xml.end({ pretty: false}),generateCustomerChecksum(checksumString),function(xml) {
                     parseXmlString(xml, function (err, result) {
                         if(typeof result.root.customer_nr !== 'undefined') {
                             var apiResponse = parseInt(result.root.customer_nr[0]);
                             if(!isNaN(apiResponse)) {
                                 log.info("klant toegevoegd, api response : " + apiResponse);
-                                connection.query("UPDATE orders SET response_code='"+apiResponse+"' ,error_message=''  WHERE order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                                connection.query("UPDATE customers SET response_code='"+apiResponse+"' ,error_message=''  WHERE fk_order_number='"+row.order_number+"'", function (updateErr, updateRes) {
                                     if (updateErr) throw updateErr;
                                 })
                             } else {
@@ -109,7 +111,7 @@ var Generatexml = function () {
                             }
                         } else {
                             log.emergency("Error opgetreden met toevoegen van klant. De volgende api response terug gekregen : " + result.root.error_message[0]);
-                            connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                            connection.query("UPDATE customers SET error_message='"+result.root.error_message[0]+"'  WHERE fk_order_number='"+row.order_number+"'", function (updateErr, updateRes) {
                                 if (updateErr) throw updateErr;
                             })
 
@@ -125,10 +127,11 @@ var Generatexml = function () {
 
     }
     this.xmlOrderOutput = function (connection) {
+        var ColijnApiService = new ColijnApi();
         async.series([
             // first load this
             function(callback){
-                var sql    = "SELECT * FROM orders As o LEFT JOIN payment As p ON o.order_number = p.fk_order_number LEFT JOIN customers As c ON o.order_number = c.fk_order_number";
+                var sql    = "SELECT * FROM orders As o LEFT JOIN payment As p ON o.order_number = p.fk_order_number LEFT JOIN customers As c ON o.order_number = c.fk_order_number WHERE o.response_code IS NULL";
                 connection.query(sql, function(err, rows, fields) {
                     if (err) return next(err);
                     callback(null,rows);
@@ -136,7 +139,7 @@ var Generatexml = function () {
             },
             // then this
             function (callback) {
-                var sqlCheckCodeExists    = "SELECT *   FROM feed_data";
+                var sqlCheckCodeExists    = "SELECT * FROM feed_data";
                 connection.query(sqlCheckCodeExists, function(codeErr, codeRows, codeFields) {
                     if (codeErr) throw codeErr;
                     callback(null,codeRows);
@@ -154,7 +157,7 @@ var Generatexml = function () {
                     ('00' + (timestamp.getUTCMonth()+1)).slice(-2) + '-' +
                     timestamp.getUTCFullYear();
                 var getMinutes = timestamp.getHours()+':'+timestamp.getMinutes()+':'+timestamp.getSeconds();
-                xml.ele('customer_nr',1480517);
+                xml.ele('customer_nr',item.customer_id);
                 xml.ele('date',plainDate);
                 xml.ele('delivery_date',plainDate);
                 xml.ele('delivery_time',plainDate + ' '+getMinutes);
@@ -175,7 +178,7 @@ var Generatexml = function () {
                 }  else if (item.payment_method=='iDEAL') {
                     xml.ele('initial_payment_method',4);
                 }
-                xml.ele('branch',item.branch_id);
+
 
                 var orderRows =  xml.ele('order_rows')
 
@@ -184,28 +187,38 @@ var Generatexml = function () {
                 connection.query(productSql, function(productErr, productRows, productFields) {
                     var counter = 1;
                     var priceChecksum='';
+                    var wareHouseId = '';
                     productRows.forEach(function(productItem) {
 
                         // Get some product specs from the feed against the beslist feed
-                        var wareHouseId = '';
                         var commission_code = '';
                         var zelfMontage = '';
                         var verzendMethode = '';
+                        var branchId = '';
 
-                        var codeRand = new Array('0112061051','9002759910792','200301951','78009230');
-                        var codeCheck = codeRand[Math.floor(Math.random() * codeRand.length) + 1];
                         results[1].forEach(function(items) {
-                            if(items.unieke_code == codeCheck) { // change to  the product bvbcode later on
-                                wareHouseId = items.warehouse;
+                            wareHouseId = items.warehouse;
+                            if(items.unieke_code == 8714713046362) { // veranderd bvb code in productie
+                                branchId = items.branch_id;
                                 commission_code = items.commissiecode;
                                 zelfMontage = items.zelfmontage;
                                 verzendMethode = items.verzendMethode;
                             }
                         });
+
+                        // zet de branch id
+                        // deze zetten we wanneer een bvb code gelijk is
+                        // aan eeen product
+                        if(counter == 1) {
+                            xml.ele('branch',branchId);
+                        }
+
                         var orderRow = orderRows.ele('order_row');
                         orderRow.ele('rownr',counter);
                         orderRow.ele('row_type','R'); // conditie toevoegen
-                        orderRow.ele('article_nr',productItem.bvb_code);
+                        //orderRow.ele('article_nr',productItem.bvb_code);
+                        // de bvb code
+                        orderRow.ele('article_nr',202506594); // verander artikel nr in productie
                         orderRow.ele('description',productItem.product_name);
                         orderRow.ele('vat_code',2);
                         orderRow.ele('price',productItem.price.toFixed(4).replace('.',','));
@@ -231,12 +244,36 @@ var Generatexml = function () {
                     shippingRow.ele('rownr',counter);
                     shippingRow.ele('article_nr',4);
                     shippingRow.ele('description','verzendkosten');
-                    shippingRow.ele('warehouse',5);
+                    shippingRow.ele('warehouse',wareHouseId);
                     shippingRow.ele('commission_code',1);
+                    shippingRow.ele('quantity','1,000');
+                    shippingRow.ele('vat_code',2);
                     shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
-                    console.log(totalShopAmount.toFixed(4).replace('.',','));
-                    generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),1480517);
-                    console.log(xml.end({ pretty: true}));
+                    var checkSum = generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),item.customer_id);
+                    // schiet de order naar colijn
+                    ColijnApiService.addOrder(xml.end({ pretty: false}),checkSum,function(orderRes){
+                        parseXmlString(orderRes, function (err, result) {
+                            if(typeof result.root.order_nr !== 'undefined') {
+                                var apiResponse = parseInt(result.root.order_nr[0]);
+                                if(!isNaN(apiResponse)) {
+                                    log.info("order toegevoegd, api response : " + apiResponse);
+                                    connection.query("UPDATE orders SET response_code='"+apiResponse+"' ,error_message=''  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
+                                        if (updateErr) throw updateErr;
+                                    })
+                                } else {
+                                    log.emergency("Order niet toegevoegd, waarde blijkt geen numerieke waarde te zijn. Api response: " + apiResponse);
+                                }
+                            } else {
+                                log.emergency("Error opgetreden met toevoegen van order. De volgende api response terug gekregen : " + result.root.error_message[0]);
+                                connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
+                                    if (updateErr) throw updateErr;
+                                })
+
+                            }
+
+                        });
+
+                    });
 
                 });
 

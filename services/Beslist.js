@@ -19,6 +19,7 @@ var Beslist = function () {
                                 if (err) {
                                     console.log(err);
                                 } else {
+
                                     if(rows[0].countOrder == 0 ) {
                                         insertOrders(res,connection);
                                         insertPayments(res,connection);
