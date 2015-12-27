@@ -2,9 +2,6 @@ var method = Apirequests.prototype;
 var request = require('request');
 var apikey;
 var hostName = 'https://test-shopitem.api.beslist.nl/';
-var fs = require('fs')
-    , Log = require('log')
-    , log = new Log('debug', fs.createWriteStream('output.log',{'flags':'a'}));
 
 function Apirequests() {
 
@@ -33,9 +30,6 @@ method.updatePriceApi = function(shopId,productId,price,callback) {
             }
         },
         function (error, response, body) {
-            //if(error != null) {
-            //    log.emergency(error);
-            //} else {}
             console.log(body);
             callback(body);
         }

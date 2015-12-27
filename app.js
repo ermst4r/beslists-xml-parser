@@ -45,7 +45,7 @@ connection.connect();
 // add the feeds in the database
 //Import.parseFeedWrapper(connection);
 // generate the xml output
-//Generatexml.xmlOrderOutput(connection);
+Generatexml.xmlOrderOutput(connection);
 //Generatexml.xmlCustomerOutput(connection);
 // add the new order to the database
 //Beslist.parseOrders(connection);

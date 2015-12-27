@@ -29,6 +29,7 @@ var Generatexml = function () {
     }
     var generateOrderChecksum = function(checksumString,customerNr) {
                var finalCheckSum =  webClient + customerNr + checksumString;
+        console.log(finalCheckSum);
                 var calculationOfAsciiCodes = 0;
 
                 finalCheckSum.split("").forEach(function(row) {
@@ -206,6 +207,7 @@ var Generatexml = function () {
                     shippingRow.ele('warehouse',5);
                     shippingRow.ele('commission_code',1);
                     shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
+                    console.log(totalShopAmount.toFixed(4).replace('.',','));
                     generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),1480517);
                     console.log(xml.end({ pretty: true}));
 
