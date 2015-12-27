@@ -120,8 +120,15 @@ var Import = function () {
         var yesterday = moment().subtract(1, 'days');
         var twoDaysAgo =  moment().subtract(2, 'days');
         var today = moment();
+        var itemsByData = new Array();
+
         var BeslistPriceApi = new Apirequests();
         async.series([
+
+
+
+
+
             /*
              Krijg data van de branches
              En plaats deze in een loop
@@ -142,6 +149,52 @@ var Import = function () {
                     callback();
                 });
             },
+
+
+            /*
+                 Doe de niet leverbaar check
+             */
+            function (callback) {
+                var teller = 0;
+                log.notice("Checked of producten niet meer bestaan in de feed...")
+                branches.forEach(function(brancheItem) {
+                    var itemYesterday = "SELECT * FROM feed_update_data WHERE branch_id='" + brancheItem.branch_id + "' AND creation_date='" + yesterday.format('YYYY-MM-DD') + " 00:00:00'";
+
+                    connection.query(itemYesterday, function (yesterdayErr, yesterdayRows, fields) {
+                        if (yesterdayErr) throw yesterdayErr;
+                            yesterdayRows.forEach(function(yesterdayRow) {
+                                var itemToday = "SELECT COUNT(*) As itemFound FROM feed_update_data WHERE unieke_code='" + yesterdayRow.unieke_code + "' AND branch_id='" + brancheItem.branch_id + "'  AND creation_date='" + today.format('YYYY-MM-DD') + " 00:00:00'";
+                                connection.query(itemToday,function(todayErr,todayRow,todayFields) {
+                                    if(todayErr) throw todayErr;
+                                    if(todayRow[0].itemFound == 0 ) {
+                                        log.notice(yesterdayRow.unieke_code + "bestaat niet meer in de feed");
+                                        BeslistPriceApi.setApiKey(brancheItem.beslist_api_key);
+                                        BeslistPriceApi.deliverytimeApi(brancheItem.shop_id,yesterdayRow.unieke_code,'niet leverbaar',function(res) {
+                                            if(res.status=='success') {
+                                                log.info('Beslist niet levertijd Call successvol!' + 'Unieke_code : ' + yesterdayRow.unieke_code + ' Niet leverbaar');
+                                            }
+                                            if(res.status == 'error') {
+                                                log.emergency("Error van beslist API. LEVERBAAR API  : Parameters verzonden: : " +
+                                                    " Unieke Code: " + yesterdayRow.unieke_code +
+                                                    " shop ID: " + brancheItem.shop_id,
+                                                    ' call van Api ' + res.message);
+                                            }
+                                        });
+                                    }
+                                } );
+
+                            });
+
+                        if(teller == 1) {
+                            callback();
+                        }
+                        teller++;
+                    })
+                });
+
+            } ,
+
+
 
             /*
              Doe de matching
@@ -184,7 +237,7 @@ var Import = function () {
                                                     log.emergency(' FOUT. De API  van beslist geeft geen response terug.');
                                                 } else {
                                                     if(res.status == 'error') {
-                                                        log.emergency("Error van beslist API : Parameters verzonden: : " +
+                                                        log.emergency("Error van beslist API PRIJSUPDATE API : Parameters verzonden: : " +
                                                             " Unieke Code: " + uniekeCode +
                                                             " prijs: " + parseFloat(prijs.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,').replace(",",".")),
                                                             " shop ID: " + brancheItem.shop_id,
@@ -256,7 +309,7 @@ var Import = function () {
              */
             function (callback) {
                 branches.forEach(function(brancheItem) {
-                    //parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',true);
+                   // parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',true);
                 });
                 callback();
             }
@@ -265,14 +318,7 @@ var Import = function () {
 
         });
 
-
-
-
     }
-
-
-
-
 
 
 

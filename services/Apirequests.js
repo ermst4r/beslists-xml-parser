@@ -15,6 +15,27 @@ method.setApiKey = function(val){
 };
 
 
+method.deliverytimeApi = function(shopId,productId,deliveryTime,callback) {
+
+    if (typeof method.getApiKey() === 'undefined') {
+        throw {name : "Apikey error", message : "A apikey is required!"};
+    }
+    request(
+        {
+            url : hostName+"product/v2/shops/"+shopId+"/items/"+productId+"/delivery_time_nl",
+            method: 'PUT',
+            json: {delivery_time:deliveryTime},
+            headers : {
+                "apikey" :method.getApiKey()
+            }
+        },
+        function (error, response, body) {
+            callback(body);
+        }
+    );
+
+};
+
 method.updatePriceApi = function(shopId,productId,price,callback) {
 
     if (typeof method.getApiKey() === 'undefined') {
