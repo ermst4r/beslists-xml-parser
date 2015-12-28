@@ -200,6 +200,7 @@ var Generatexml = function () {
 
                         results[1].forEach(function(items) {
                             wareHouseId = items.warehouse;
+                            /* TODO hardcoded getal veranderen in BVB code */
                             if(items.unieke_code == 8714713046362) { // veranderd bvb code in productie
                                 branchId = items.branch_id;
                                 commission_code = items.commissiecode;

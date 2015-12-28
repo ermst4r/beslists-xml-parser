@@ -39,7 +39,11 @@ connection.connect();
 
 
 
-
+/* TODO
+    - waardes veranderen bij orders
+    - Zorg ervoor dat de priceupdate gescheiden wordt, dat eerst de data wordt toegevoegd en daarna de price update wordt gedaan
+    - Parseorders in een cronjob zetten & de colijn api's ook
+ */
 
 // add the feeds in the database
 //Import.parseFeedWrapper(connection);

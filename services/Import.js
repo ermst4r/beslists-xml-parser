@@ -308,7 +308,7 @@ var Import = function () {
              */
             function (callback) {
                 branches.forEach(function(brancheItem) {
-                   // parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',true);
+                   parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',true);
                 });
                 callback();
             }
