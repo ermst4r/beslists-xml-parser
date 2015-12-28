@@ -46,8 +46,8 @@ connection.connect();
 // generate the xml output
 Generatexml.xmlOrderOutput(connection);
 // add the new order to the database
-//Beslist.parseOrders(connection);
-//Generatexml.xmlCustomerOutput(connection);
+Beslist.parseOrders(connection);
+Generatexml.xmlCustomerOutput(connection);
 
 //Import.parseFeedUpdateShopPrice(connection);
 

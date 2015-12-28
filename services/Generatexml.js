@@ -157,7 +157,9 @@ var Generatexml = function () {
                     ('00' + (timestamp.getUTCMonth()+1)).slice(-2) + '-' +
                     timestamp.getUTCFullYear();
                 var getMinutes = timestamp.getHours()+':'+timestamp.getMinutes()+':'+timestamp.getSeconds();
-                xml.ele('customer_nr',item.customer_id);
+                /* TODO klant id veranderen */
+                var klantId = 1291;
+                xml.ele('customer_nr',klantId);
                 xml.ele('date',plainDate);
                 xml.ele('delivery_date',plainDate);
                 xml.ele('delivery_time',plainDate + ' '+getMinutes);
@@ -249,7 +251,7 @@ var Generatexml = function () {
                     shippingRow.ele('quantity','1,000');
                     shippingRow.ele('vat_code',2);
                     shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
-                    var checkSum = generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),item.customer_id);
+                    var checkSum = generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),klantId);
                     // schiet de order naar colijn
                     ColijnApiService.addOrder(xml.end({ pretty: false}),checkSum,function(orderRes){
                         parseXmlString(orderRes, function (err, result) {
