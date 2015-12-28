@@ -27,9 +27,6 @@ var connection = mysql.createConnection(connectionString);
 connection.connect();
 
 
-
-
-
 var CronJob = require('cron').CronJob;
 /* Om zes uur in de ochtend laden we de nieuwste feed in */
 new CronJob('* 00 06 * * *', function() {
@@ -52,7 +49,6 @@ new CronJob('0 */10 * * * *', function() {
 /* TODO
  - waardes veranderen bij orders
  - Zorg ervoor dat de priceupdate gescheiden wordt, dat eerst de data wordt toegevoegd en daarna de price update wordt gedaan
- - Parseorders in een cronjob zetten & de colijn api's ook
  */
 
 

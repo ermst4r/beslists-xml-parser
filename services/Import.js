@@ -46,9 +46,6 @@ var Import = function () {
                                 if(err) throw err;
 
                             });
-
-
-
                         } else {
 
                             var sql = 'UPDATE '+ table+ ' SET prijs = '+ connection.escape(result.producten.product[i].Prijs[0]) + ' WHERE branch_id ='+branch_id+'  AND creation_date=\''+today.format('YYYY-MM-DD')+' 00:00:00\' AND unieke_code = '+connection.escape(productData.unieke_code);
@@ -58,7 +55,6 @@ var Import = function () {
 
                             });
                         }
-
                     }
 
                 });
@@ -70,6 +66,9 @@ var Import = function () {
             console.log(err)
         });
     }
+
+
+
 
     var checkIfEntryFromYesterdayExists = function(connection,mainItem,yesterday,callback) {
         var sql = "SELECT COUNT(*) As priceItems FROM feed_update_data WHERE branch_id='" + mainItem.branch_id + "' AND creation_date='" + yesterday.format('YYYY-MM-DD')+" 00:00:00'";
@@ -95,6 +94,42 @@ var Import = function () {
                 callback(true);
             }
         })
+    }
+
+
+
+    this.addProductsFromToday = function(connection) {
+
+        var twoDaysAgo =  moment().subtract(2, 'days');
+        log.info('remove the feed from 2 days ago.. from every branch: so the day to remove is ' + twoDaysAgo.format('YYYY-MM-DD'));
+        connection.query("DELETE FROM feed_update_data  WHERE creation_date='" + twoDaysAgo.format('YYYY-MM-DD')+" 00:00:00'", function (err, result) {
+            if (err) throw err;
+            if(err != null) {
+                log.emergency("Error in delete" + err);
+            }
+            log.info('deleted ' + result.affectedRows + ' rows');
+        })
+
+        var sql = "SELECT * FROM branches WHERE  allow_price_update ='1'";
+        connection.query(sql, function(err, rows, fields) {
+            if (err) throw err;
+                rows.forEach(function(item) {
+                    var checkItemSql = "SELECT COUNT(*) As itemsFound FROM feed_update_data WHERE branch_id='"+item.branch_id+"' AND creation_date=DATE('"+moment().format('YYYY-MM-DD')+"')";
+                    connection.query(checkItemSql, function(err, rows, fields) {
+                        if(err) throw  err;
+                        if(err != null) {
+                            log.emergency("Error in check data from today" + err);
+                        }
+                        // check if the brancheIds exists with the current date
+                        if(rows[0].itemsFound == 0 ){
+                            parseFeed(connection,item.branch_feed,item.branch_id,'feed_update_data',false);
+                            log.info('adding data ' + moment().format('YYYY-MM-DD') + ' for the branch ' + item.branch_name);
+                        }
+                    });
+                });
+        });
+
+
     }
 
 
@@ -124,7 +159,7 @@ var Import = function () {
 
         var branches = new Array();
         var yesterday = moment().subtract(1, 'days');
-        var twoDaysAgo =  moment().subtract(2, 'days');
+
         var today = moment();
         var BeslistPriceApi = new BeslistApi();
         async.series([
@@ -141,6 +176,7 @@ var Import = function () {
                     } else {
                         rows.forEach(function(item) {
                             branches.push(item);
+
 
                         });
                     }
@@ -269,50 +305,7 @@ var Import = function () {
                     });
                 });
                 callback();
-                // delete here the data from 2 days ago
-            }, function (callback) {
-                log.info('remove the feed from 2 days ago.. from every branch: so the day to remove is ' + twoDaysAgo.format('YYYY-MM-DD'));
-                log.info('The query is ' + "DELETE FROM feed_update_data  WHERE  creation_date='" + twoDaysAgo.format('YYYY-MM-DD')+" 00:00:00' ");
-                connection.query("DELETE FROM feed_update_data  WHERE creation_date='" + twoDaysAgo.format('YYYY-MM-DD')+" 00:00:00'", function (err, result) {
-                    if (err) throw err;
-                    if(err != null) {
-                        log.emergency("Error in delete" + err);
-                    }
-                    log.info('deleted ' + result.affectedRows + ' rows');
-                })
-                callback();
-            },
-            // controleer of de data van vandaag is toegevoegd,
-            // zo niet voeg deze dan toe
-            function (callback) {
-                branches.forEach(function(brancheItem) {
-                    var checkItemSql = "SELECT COUNT(*) As itemsFound FROM feed_update_data WHERE branch_id='"+brancheItem.branch_id+"' AND creation_date=DATE('"+moment().format('YYYY-MM-DD')+"')";
-                    connection.query(checkItemSql, function(err, rows, fields) {
-                        if(err) throw  err;
-                        if(err != null) {
-                            log.emergency("Error in check data from today" + err);
-                        }
-                        // check if the brancheIds exists with the current date
-                        if(rows[0].itemsFound == 0 ){
-                            parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',false);
-                            log.info('adding data ' + moment().format('YYYY-MM-DD') + ' for the branch ' + brancheItem.branch_name);
-                        }
-                    });
-
-                });
-                callback();
-            },
-
-            /*
-             Update de feed of er nieuwe prijzen zijn
-             */
-            function (callback) {
-                branches.forEach(function(brancheItem) {
-                   parseFeed(connection,brancheItem.branch_feed,brancheItem.branch_id,'feed_update_data',true);
-                });
-                callback();
             }
-
         ], function(err,res) {
 
         });
