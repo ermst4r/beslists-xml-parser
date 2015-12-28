@@ -14,8 +14,8 @@ config.beslist_price_api_url = 'https://test-shopitem.api.beslist.nl/';
 
 // De url waarmee we orders naar Colijn schieten (Klanten)
 config.colijn_webclient = '01';
-config.colijn_customer_url = 'http://82.176.119.240:8899/webservice/!web_services.upsert_web_customer';
-config.colijn_order_url = 'http://82.176.119.240:8899/webservice/!web_services.add_web_order';
+config.colijn_customer_url = 'http://217.63.79.213:8899/webservice/!web_services.upsert_web_customer';
+config.colijn_order_url = 'http://217.63.79.213:8899/webservice/!web_services.add_web_order';
 //
 
 
