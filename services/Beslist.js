@@ -4,41 +4,63 @@ var request = require("request");
 var parseString = require('xml2js').parseString;
 var config = require('../config');
 var file_url = config.beslist_order_url;
+var moment = require('moment');
+var md5 = require('md5');
 
 var Beslist = function () {
 
 
 
     this.parseOrders = function (connection) {
-        request.get(file_url, function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                parseString(body, function (err, result) {
-                    result.shoppingCart.shopOrders[0].shopOrder.forEach(function(res) {
-                            var sql    = "SELECT COUNT(*) AS countOrder FROM orders WHERE order_number = "+ connection.escape(res.orderNumber[0]['_']);
-                            connection.query(sql, function(err, rows, fields) {
-                                if (err) {
-                                    console.log(err);
-                                } else {
 
-                                    if(rows[0].countOrder == 0 ) {
-                                        insertOrders(res,connection);
-                                        insertPayments(res,connection);
-                                        insertProducts(res,connection);
-                                        insertClient(res,connection);
-                                    }
+
+
+        var checkItemSql = "SELECT * FROM branches ";
+        connection.query(checkItemSql, function(err, rows, fields) {
+            if(err) throw err;
+            rows.forEach( function(item) {
+                var twoDaysAgo =  moment().subtract(2, 'days').format('YYYY-MM-DD');
+                var today = moment().format('YYYY-MM-DD');
+                var checksum  = String(item.beslist_order_key + item.client_id + item.shop_id + twoDaysAgo + today);
+                var file_url = "https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum="+md5(checksum)+"&client_id="+item.client_id+"&shop_id="+item.shop_id+"&date_from="+twoDaysAgo+"&date_to="+today+"&output_type=test&test_orders=1";
+
+                request.get(file_url, function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        parseString(body, function (err, result) {
+                            result.shoppingCart.shopOrders[0].shopOrder.forEach(function(res) {
+                                    var sql    = "SELECT COUNT(*) AS countOrder FROM orders WHERE order_number = "+ connection.escape(res.orderNumber[0]['_']);
+                                    connection.query(sql, function(err, rows, fields) {
+                                        if (err) {
+                                            console.log(err);
+                                        } else {
+                                            if(rows[0].countOrder == 0 ) {
+                                                insertOrders(res,connection,item.branch_id);
+                                                insertPayments(res,connection,item.branch_id);
+                                                insertProducts(res,connection,item.branch_id);
+                                                insertClient(res,connection,item.branch_id);
+                                            }
+                                        }
+                                    });
                                 }
-                            });
-                        }
-                    );
+                            );
+                        });
+                    }
+                }).on('error', function(err) {
+                    console.log(err)
                 });
-            }
-        }).on('error', function(err) {
-            console.log(err)
+
+
+            });
+
         });
+
+
+
+
     }
 
 
-    var insertPayments = function (res,connection) {
+    var insertPayments = function (res,connection,branch_id) {
         res.payment.forEach(function(payments) {
             var paymentData  =
             {
@@ -47,19 +69,18 @@ var Beslist = function () {
                 status:payments.status[0],
                 iban:payments.iban[0],
                 bic:payments.bic[0],
-                fk_order_number:res.orderNumber[0]['_']
+                fk_order_number:res.orderNumber[0]['_'],
+                fk_branch_id:branch_id
 
             };
             connection.query('INSERT INTO payment SET ?', paymentData, function(err, result) {
-                if (err) {
-                    console.log(err);
-                }
+                if(err) throw err;
             });
 
         });
     }
 
-    var insertOrders= function(res,connection) {
+    var insertOrders= function(res,connection,branch_id) {
         var orderData  =
         {
             order_number:res.orderNumber[0]['_'],
@@ -69,7 +90,8 @@ var Beslist = function () {
             shipping:res.shipping[0],
             transaction_costs:res.transactionCosts[0],
             commision:res.commission[0],
-            numProducts:res.numProducts[0]
+            numProducts:res.numProducts[0],
+            fk_branch_id:branch_id
         };
         connection.query('INSERT INTO orders SET ?', orderData, function(err, result) {
             if (err) {
@@ -79,7 +101,7 @@ var Beslist = function () {
     }
 
 
-    var insertProducts= function(res,connection) {
+    var insertProducts= function(res,connection,branch_id) {
         for (var i =0; i< res.products[0].product.length; i ++)  {
             var productData  =
             {
@@ -92,7 +114,8 @@ var Beslist = function () {
                 commission_fixed:res.products[0].product[i].commission[0].fixed[0],
                 commission_variable:res.products[0].product[i].commission[0].variable[0],
                 commission_total:res.products[0].product[i].commission[0].total[0],
-                fk_order_number:res.orderNumber[0]['_']
+                fk_order_number:res.orderNumber[0]['_'],
+                fk_branch_id:branch_id
             };
 
             connection.query('INSERT INTO products SET ?', productData, function(err, result) {
@@ -108,7 +131,7 @@ var Beslist = function () {
     }
 
 
-    var insertClient= function(res,connection) {
+    var insertClient= function(res,connection,branche_id) {
 
         var customerData  =
         {
@@ -135,7 +158,8 @@ var Beslist = function () {
             customer_invoice_sex:res.addresses[0].invoice[0].sex,
             customer_invoice_zip:res.addresses[0].invoice[0].zip,
             customer_invoice_country:res.addresses[0].invoice[0].country,
-            fk_order_number:res.orderNumber[0]['_']
+            fk_order_number:res.orderNumber[0]['_'],
+            fk_branch_id:branche_id
         };
         connection.query('INSERT INTO customers SET ?', customerData, function(err, result) {
             if (err) {

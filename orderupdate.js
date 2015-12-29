@@ -27,6 +27,11 @@ var connection = mysql.createConnection(connectionString);
 connection.connect();
 
 
+Beslist.parseOrders(connection);
+Generatexml.xmlOrderOutput(connection);
+Generatexml.xmlCustomerOutput(connection);
+
+
 var CronJob = require('cron').CronJob;
 /* Om zes uur in de ochtend laden we de nieuwste feed in */
 new CronJob('* 00 06 * * *', function() {
@@ -40,7 +45,7 @@ new CronJob('* 00 06 * * *', function() {
  */
 new CronJob('0 */10 * * * *', function() {
     log.info('Polling for new data...');
-    Beslist.parseOrders(connection);
+
     Generatexml.xmlOrderOutput(connection);
     Generatexml.xmlCustomerOutput(connection);
 }, null, true, 'Europe/Amsterdam');

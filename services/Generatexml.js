@@ -174,6 +174,7 @@ var Generatexml = function () {
                 xml.ele('own_reference','-');
                 xml.ele('delivery_date_final','N');
                 xml.ele('transaction_final','J');
+                xml.ele('branch',item.fk_branch_id);
                 xml.ele('initial_payment_amount',totalShopAmount.toFixed(4).replace('.',','));
                 if(item.payment_method=='Creditcard') {
                     xml.ele('initial_payment_method',5);
@@ -196,25 +197,17 @@ var Generatexml = function () {
                         var commission_code = '';
                         var zelfMontage = '';
                         var verzendMethode = '';
-                        var branchId = '';
 
                         results[1].forEach(function(items) {
                             wareHouseId = items.warehouse;
                             /* TODO hardcoded getal veranderen in BVB code */
                             if(items.unieke_code == 8714713046362) { // veranderd bvb code in productie
-                                branchId = items.branch_id;
                                 commission_code = items.commissiecode;
                                 zelfMontage = items.zelfmontage;
                                 verzendMethode = items.verzendMethode;
                             }
                         });
 
-                        // zet de branch id
-                        // deze zetten we wanneer een bvb code gelijk is
-                        // aan eeen product
-                        if(counter == 1) {
-                            xml.ele('branch',branchId);
-                        }
 
                         var orderRow = orderRows.ele('order_row');
                         orderRow.ele('rownr',counter);
@@ -256,7 +249,7 @@ var Generatexml = function () {
                     // schiet de order naar colijn
                     ColijnApiService.addOrder(xml.end({ pretty: false}),checkSum,function(orderRes){
                         parseXmlString(orderRes, function (err, result) {
-                            if(typeof result.root.order_nr !== 'undefined') {
+                            if(typeof result !== 'undefined') {
                                 var apiResponse = parseInt(result.root.order_nr[0]);
                                 if(!isNaN(apiResponse)) {
                                     log.info("order toegevoegd, api response : " + apiResponse);
@@ -267,10 +260,16 @@ var Generatexml = function () {
                                     log.emergency("Order niet toegevoegd, waarde blijkt geen numerieke waarde te zijn. Api response: " + apiResponse);
                                 }
                             } else {
-                                log.emergency("Error opgetreden met toevoegen van order. De volgende api response terug gekregen : " + result.root.error_message[0]);
-                                connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
-                                    if (updateErr) throw updateErr;
-                                })
+
+                                if(typeof result !== 'undefined') {
+                                    log.emergency("Error opgetreden met toevoegen van order. De volgende api response terug gekregen : " + result.root.error_message[0]);
+                                    connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
+                                        if (updateErr) throw updateErr;
+                                    })
+                                } else {
+                                    log.debug("timeout bij het inschieten naar colijn API. probeer bij de volgende cronjob nog een x");
+                                }
+
 
                             }
 
