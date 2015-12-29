@@ -39,13 +39,15 @@ new CronJob('* 00 06 * * *', function() {
     Import.parseFeedWrapper(connection);
 }, null, true, 'Europe/Amsterdam');
 
+
+
 /*
   Zorg ervoor dat om de 10 minuten wordt gechecked of er nieuwe data is van beslist
   En schiet deze vervolgens naar Colijn
  */
 new CronJob('0 */10 * * * *', function() {
     log.info('Polling for new data...');
-
+    Beslist.parseOrders(connection);
     Generatexml.xmlOrderOutput(connection);
     Generatexml.xmlCustomerOutput(connection);
 }, null, true, 'Europe/Amsterdam');

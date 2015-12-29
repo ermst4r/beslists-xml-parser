@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="8bf18516-7070-409e-a386-d95c0aecb6da" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/services/Beslist.js" afterPath="$PROJECT_DIR$/services/Beslist.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/services/ColijnApi.js" afterPath="$PROJECT_DIR$/services/ColijnApi.js" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/services/Generatexml.js" afterPath="$PROJECT_DIR$/services/Generatexml.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/orderupdate.js" afterPath="$PROJECT_DIR$/orderupdate.js" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="poortvliet.iws" />
@@ -43,8 +41,8 @@
             <state />
           </provider>
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-105.0">
-              <caret line="203" column="0" selection-start-line="203" selection-start-column="0" selection-end-line="203" selection-end-column="0" />
+            <state vertical-scroll-proportion="-129.82759">
+              <caret line="251" column="0" selection-start-line="251" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -70,11 +68,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="orderupdate.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="orderupdate.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/orderupdate.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="29" column="17" selection-start-line="29" selection-start-column="17" selection-end-line="29" selection-end-column="17" />
+            <state vertical-scroll-proportion="0.45288754">
+              <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -84,16 +82,16 @@
         <entry file="file://$PROJECT_DIR$/services/ColijnApi.js">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="39" column="98" selection-start-line="39" selection-start-column="98" selection-end-line="39" selection-end-column="98" />
+              <caret line="40" column="10" selection-start-line="40" selection-start-column="10" selection-end-line="40" selection-end-column="10" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Generatexml.js" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Generatexml.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/services/Generatexml.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.6975684">
+            <state vertical-scroll-proportion="0.0">
               <caret line="54" column="0" selection-start-line="54" selection-start-column="0" selection-end-line="54" selection-end-column="0" />
               <folding />
             </state>
@@ -127,10 +125,10 @@
         <option value="$PROJECT_DIR$/logs/priceupdate.log" />
         <option value="$PROJECT_DIR$/priceupdate.js" />
         <option value="$PROJECT_DIR$/logs/colijnApi.log" />
-        <option value="$PROJECT_DIR$/services/ColijnApi.js" />
-        <option value="$PROJECT_DIR$/orderupdate.js" />
         <option value="$PROJECT_DIR$/services/Beslist.js" />
         <option value="$PROJECT_DIR$/services/Generatexml.js" />
+        <option value="$PROJECT_DIR$/services/ColijnApi.js" />
+        <option value="$PROJECT_DIR$/orderupdate.js" />
       </list>
     </option>
   </component>
@@ -363,7 +361,13 @@
       <option name="project" value="LOCAL" />
       <updated>1451403713189</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="fixed the order output">
+      <created>1451411641629</created>
+      <option name="number" value="00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1451411641629</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TodoView">
@@ -451,7 +455,8 @@
     <MESSAGE value="added the order update" />
     <MESSAGE value="setted the cronjob" />
     <MESSAGE value="Fixed some issues" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed some issues" />
+    <MESSAGE value="fixed the order output" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed the order output" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -806,24 +811,8 @@
         <state />
       </provider>
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-105.0">
-          <caret line="203" column="0" selection-start-line="203" selection-start-column="0" selection-end-line="203" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/services/ColijnApi.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="39" column="98" selection-start-line="39" selection-start-column="98" selection-end-line="39" selection-end-column="98" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/orderupdate.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="29" column="17" selection-start-line="29" selection-start-column="17" selection-end-line="29" selection-end-column="17" />
+        <state vertical-scroll-proportion="-129.82759">
+          <caret line="251" column="0" selection-start-line="251" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -838,8 +827,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/services/Generatexml.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6975684">
+        <state vertical-scroll-proportion="0.0">
           <caret line="54" column="0" selection-start-line="54" selection-start-column="0" selection-end-line="54" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/services/ColijnApi.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="40" column="10" selection-start-line="40" selection-start-column="10" selection-end-line="40" selection-end-column="10" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/orderupdate.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.45288754">
+          <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
           <folding />
         </state>
       </provider>
