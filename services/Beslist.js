@@ -22,7 +22,7 @@ var Beslist = function () {
                 var twoDaysAgo =  moment().subtract(2, 'days').format('YYYY-MM-DD');
                 var today = moment().format('YYYY-MM-DD');
                 var checksum  = String(item.beslist_order_key + item.client_id + item.shop_id + twoDaysAgo + today);
-                var file_url = "https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum="+md5(checksum)+"&client_id="+item.client_id+"&shop_id="+item.shop_id+"&date_from="+twoDaysAgo+"&date_to="+today+"&output_type=test&test_orders=1";
+                var file_url = "https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum="+md5(checksum)+"&client_id="+item.client_id+"&shop_id="+item.shop_id+"&date_from="+twoDaysAgo+"&date_to="+today+"&output_type=test&test_orders=6";
 
                 request.get(file_url, function (error, response, body) {
                     if (!error && response.statusCode == 200) {

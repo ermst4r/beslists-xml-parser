@@ -37,7 +37,7 @@ method.addOrder = function(order_data,checksum,callback) {
     request.post(
         {
             url : config.colijn_order_url,
-            form: {i_webclient:config.colijn_webclient,i_order_data:order_data,i_checksum:checksum+"erwin"}
+            form: {i_webclient:config.colijn_webclient,i_order_data:order_data,i_checksum:checksum}
         },
         function (error, response, body) {
             callback(body);

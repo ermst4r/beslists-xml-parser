@@ -46,13 +46,16 @@ var Generatexml = function () {
     }
 
     this.xmlCustomerOutput = function(connection) {
-        var sql = "SELECT * FROM orders AS o LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number) WHERE c.response_code IS NULL";
+        var sql = "SELECT * FROM orders AS o LEFT JOIN customers AS c ON (c.fk_order_number = o.order_number) WHERE c.response_code IS NULL GROUP BY c.fk_order_number,c.fk_branch_id";
         var ColijnApiService = new ColijnApi();
 
         connection.query(sql, function(err, rows, fields) {
-            if (err) return next(err);
+            if (err) throw err;
+
+
 
             rows.forEach(function(row) {
+                console.log("voer mij uit");
                 var checksumString = '';
                 var xml = builder.create('root',{encoding:'UTF-8'});
                 xml.ele('first_name',row.customer_shipping_firstname);
@@ -103,7 +106,7 @@ var Generatexml = function () {
                             var apiResponse = parseInt(result.root.customer_nr[0]);
                             if(!isNaN(apiResponse)) {
                                 log.info("klant toegevoegd, api response : " + apiResponse);
-                                connection.query("UPDATE customers SET response_code='"+apiResponse+"' ,error_message=''  WHERE fk_order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                                connection.query("UPDATE customers SET response_code='"+apiResponse+"' ,error_message=''  WHERE fk_order_number='"+row.order_number+"' AND fk_branch_id='"+row.fk_branch_id+"'", function (updateErr, updateRes) {
                                     if (updateErr) throw updateErr;
                                 })
                             } else {
@@ -111,7 +114,7 @@ var Generatexml = function () {
                             }
                         } else {
                             log.emergency("Error opgetreden met toevoegen van klant. De volgende api response terug gekregen : " + result.root.error_message[0]);
-                            connection.query("UPDATE customers SET error_message='"+result.root.error_message[0]+"'  WHERE fk_order_number='"+row.order_number+"'", function (updateErr, updateRes) {
+                            connection.query("UPDATE customers SET error_message='"+result.root.error_message[0]+"'  WHERE fk_order_number='"+row.order_number+"'  AND fk_branch_id='"+row.fk_branch_id+"'", function (updateErr, updateRes) {
                                 if (updateErr) throw updateErr;
                             })
 
@@ -131,7 +134,12 @@ var Generatexml = function () {
         async.series([
             // first load this
             function(callback){
-                var sql    = "SELECT * FROM orders As o LEFT JOIN payment As p ON o.order_number = p.fk_order_number LEFT JOIN customers As c ON o.order_number = c.fk_order_number WHERE o.response_code IS NULL";
+                var sql    = "SELECT  o.fk_branch_id As fk_branch_id, o.date_created As date_created, o.price As price, " +
+                    "o.shipping As shipping, o.order_number As order_number, p.payment_method As payment_method FROM orders As o " +
+                    "LEFT JOIN payment As p ON o.order_number = p.fk_order_number " +
+                    "LEFT JOIN customers As c ON o.order_number = c.fk_order_number" +
+                    " WHERE o.response_code IS NULL" +
+                    " GROUP BY o.order_number,o.fk_branch_id";
                 connection.query(sql, function(err, rows, fields) {
                     if (err) return next(err);
                     callback(null,rows);
@@ -147,6 +155,7 @@ var Generatexml = function () {
             }
 
         ], function(error, results) {
+
             results[0].forEach(function(item) {
                 var xml = builder.create('root');
                 var totalShopAmount = parseFloat(item.price) + parseFloat(item.shipping);
@@ -247,30 +256,30 @@ var Generatexml = function () {
                     shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
                     var checkSum = generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),klantId);
                     // schiet de order naar colijn
+
                     ColijnApiService.addOrder(xml.end({ pretty: false}),checkSum,function(orderRes){
                         parseXmlString(orderRes, function (err, result) {
                             if(typeof result !== 'undefined') {
-                                var apiResponse = parseInt(result.root.order_nr[0]);
-                                if(!isNaN(apiResponse)) {
-                                    log.info("order toegevoegd, api response : " + apiResponse);
-                                    connection.query("UPDATE orders SET response_code='"+apiResponse+"' ,error_message=''  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
-                                        if (updateErr) throw updateErr;
-                                    })
-                                } else {
-                                    log.emergency("Order niet toegevoegd, waarde blijkt geen numerieke waarde te zijn. Api response: " + apiResponse);
+
+                                if (typeof result.root.order_nr !== 'undefined') {
+                                    var apiResponse = parseInt(result.root.order_nr[0]);
+                                    if (!isNaN(apiResponse)) {
+                                        log.info("order toegevoegd, api response : " + apiResponse);
+                                        //console.log("UPDATE orders SET response_code='" + apiResponse + "' ,error_message=''  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'");
+                                        connection.query("UPDATE orders SET response_code='" + apiResponse + "' ,error_message=''  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'", function (updateErr, updateRes) {
+                                            if (updateErr) throw updateErr;
+
+                                        })
+                                    }
+
                                 }
-                            } else {
-
-                                if(typeof result !== 'undefined') {
-                                    log.emergency("Error opgetreden met toevoegen van order. De volgende api response terug gekregen : " + result.root.error_message[0]);
-                                    connection.query("UPDATE orders SET error_message='"+result.root.error_message[0]+"'  WHERE order_number='"+item.order_number+"'", function (updateErr, updateRes) {
-                                        if (updateErr) throw updateErr;
-                                    })
-                                } else {
-                                    log.debug("timeout bij het inschieten naar colijn API. probeer bij de volgende cronjob nog een x");
+                                    if (typeof result.root.error_message !== 'undefined') {
+                                        log.emergency("Error opgetreden met toevoegen van order. De volgende api response terug gekregen : " + result.root.error_message[0]);
+                                      //  console.log("UPDATE orders SET error_message='" + result.root.error_message[0] + "'  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'");
+                                        connection.query("UPDATE orders SET error_message='" + result.root.error_message[0] + "'  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'", function (updateErr, updateRes) {
+                                            if (updateErr) throw updateErr;
+                                        })
                                 }
-
-
                             }
 
                         });
