@@ -33,7 +33,7 @@ var CronJob = require('cron').CronJob;
  Om 5 uur s'ochtend refresh de feeds
  */
 
-var j = schedule.scheduleJob({hour: 05, minute: 01}, function(){
+var j = schedule.scheduleJob({hour: 08, minute: 01}, function(){
     console.log('Adding new products...');
     Import.addProductsFromToday(connection);
 });
