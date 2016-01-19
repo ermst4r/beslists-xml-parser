@@ -23,14 +23,14 @@ var Beslist = function () {
                 var today = moment().format('YYYY-MM-DD');
                 var checksum  = String(item.beslist_order_key + item.client_id + item.shop_id + twoDaysAgo + today);
                 var file_url = "https://www.beslist.nl/xml/shoppingcart/shop_orders/?checksum="+md5(checksum)+"&client_id="+item.client_id+"&shop_id="+item.shop_id+"&date_from="+twoDaysAgo+"&date_to="+today;
-
+				
                 request.get(file_url, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         parseString(body, function (err, result) {
-
-
-                            if( result.shoppingCart.summary[0].numResults[0] > 0 ) {
-                                result.shoppingCart.shopOrders[0].shopOrder.forEach(function(res) {
+                        	
+                        	
+                        	if( result.shoppingCart.summary[0].numResults[0] > 0 ) { 
+                        		result.shoppingCart.shopOrders[0].shopOrder.forEach(function(res) {
                                     var sql    = "SELECT COUNT(*) AS countOrder FROM orders WHERE order_number = "+ connection.escape(res.orderNumber[0]['_']);
                                     connection.query(sql, function(err, rows, fields) {
                                         if (err) {
@@ -45,14 +45,14 @@ var Beslist = function () {
                                         }
                                     });
                                 });
-                            } else {
-                                console.log('geen nieuwe orders');
-                            }
-
-
-
-
-
+                    		} else {
+                    			console.log('geen nieuwe orders');
+                    		}
+                            
+                                
+                                
+                                
+                            
                         });
                     }
                 }).on('error', function(err) {

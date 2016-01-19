@@ -27,6 +27,9 @@ var Generatexml = function () {
 
         var finalCheckSum = webClient+checksumString;
         var calculationOfAsciiCodes = 0;
+     
+        
+        
         finalCheckSum.split("").forEach(function(row) {
             calculationOfAsciiCodes = calculationOfAsciiCodes + parseInt(row.charCodeAt(0));
         });
@@ -53,14 +56,16 @@ var Generatexml = function () {
             if (err) throw err;
 
 
-
+			
+			
             rows.forEach(function(row) {
-                console.log("voer mij uit");
+  
                 var checksumString = '';
                 var xml = builder.create('root',{encoding:'UTF-8'});
-                xml.ele('first_name',row.customer_shipping_firstname);
+                var customerName = String(row.customer_shipping_firstname);
+                xml.ele('first_name',customerName);
                 xml.ele('last_name',row.customer_shipping_last_name);
-                xml.ele('initials');
+                xml.ele('initials',customerName.charAt(0)+'.');
                 xml.ele('prefix',row.customer_shipping_last_name_insertion);
                 xml.ele('customer_type','P');
                 if(row.customer_shipping_sex == 'm') {
@@ -76,9 +81,13 @@ var Generatexml = function () {
                 invoiceAddres.ele('seq_nr',0);
                 invoiceAddres.ele('type','B');
                 invoiceAddres.ele('street',row.customer_invoice_address);
-                invoiceAddres.ele('nr',row.customer_invoice_adress_number);
-                invoiceAddres.ele('addition',row.customer_invoice_adress_number_add);
-                invoiceAddres.ele('postal_code',row.customer_invoice_zip);
+                invoiceAddres.ele('nr',String(row.customer_invoice_adress_number).replace(/\D/g,''));
+                if(row.customer_invoice_adress_number_add !='' ) {
+                	invoiceAddres.ele('addition','-'+row.customer_invoice_adress_number_add);
+                }
+                
+        
+                invoiceAddres.ele('postal_code',String(row.customer_invoice_zip).toUpperCase().replace(/\s+/g, ''));
                 invoiceAddres.ele('city',row.customer_invoice_city);
                 if(row.customer_invoice_country =='Nederland') {
                     invoiceAddres.ele('country','NL');
@@ -90,16 +99,20 @@ var Generatexml = function () {
                 shippingAddress.ele('seq_nr',1);
                 shippingAddress.ele('type','A');
                 shippingAddress.ele('street',row.customer_shipping_adress);
-                shippingAddress.ele('nr',row.customer_shipping_adress_number);
-                shippingAddress.ele('addition',row.customer_shipping_adress_additional);
-                shippingAddress.ele('postal_code',row.customer_shipping_zip);
-                shippingAddress.ele('city',row.customer_shipping_city);
-                if(row.customer_shipping_country =='Nederland') {
+                shippingAddress.ele('nr',String(row.customer_shipping_adress_number).replace(/\D/g,''));
+                if(row.customer_shipping_adress_additional !='' ) {
+                	shippingAddress.ele('addition','-'+row.customer_shipping_adress_additional);
+                }
+                
+                shippingAddress.ele('postal_code',String(row.customer_shipping_zip).toUpperCase().replace(/\s+/g, ''));
+                shippingAddress.ele('city',String(row.customer_shipping_city).toUpperCase());
+                if(row.customer_shipping_country =='NL') {
                     shippingAddress.ele('country','NL');
                 } else  {
-                    shippingAddress.ele('country','BE');
+                    shippingAddress.ele('country','BE'); 
                 }
-                checksumString=row.customer_shipping_firstname + row.customer_shipping_last_name + row.customer_phone + row.customer_email;
+            checksumString=row.customer_shipping_firstname + row.customer_shipping_last_name + row.customer_phone + row.customer_email;
+      
                ColijnApiService.addCustomer(xml.end({ pretty: false}),generateCustomerChecksum(checksumString),function(xml) {
                     parseXmlString(xml, function (err, result) {
                         if(typeof result.root.customer_nr !== 'undefined') {
@@ -134,7 +147,7 @@ var Generatexml = function () {
         async.series([
             // first load this
             function(callback){
-                var sql    = "SELECT  o.fk_branch_id As fk_branch_id, o.date_created As date_created, o.price As price, " +
+                var sql    = "SELECT  o.fk_branch_id As fk_branch_id, o.date_created As date_created, o.price As price, c.customer_id As customer_id, c.response_code As customer_response_code, " +
                     "o.shipping As shipping, o.order_number As order_number, p.payment_method As payment_method FROM orders As o " +
                     "LEFT JOIN payment As p ON o.order_number = p.fk_order_number " +
                     "LEFT JOIN customers As c ON o.order_number = c.fk_order_number" +
@@ -160,20 +173,21 @@ var Generatexml = function () {
                 var xml = builder.create('root');
                 var totalShopAmount = parseFloat(item.price) + parseFloat(item.shipping);
                 totalShopAmount = Math.round(totalShopAmount * 100) / 100;
+                var plainShippingPrice = item.shipping;
+                plainShippingPrice = Math.round(plainShippingPrice * 100) / 100;
                 // callback find ordernumber
                 var timestamp = new Date(item.date_created);
                 var plainDate = ('00' + timestamp.getUTCDate()).slice(-2) + '-' +
                     ('00' + (timestamp.getUTCMonth()+1)).slice(-2) + '-' +
                     timestamp.getUTCFullYear();
                 var getMinutes = timestamp.getHours()+':'+timestamp.getMinutes()+':'+timestamp.getSeconds();
-                /* TODO klant id veranderen */
-                var klantId = 1291;
+                var bezorgCode = 56;
+                var klantId = item.customer_response_code;
                 xml.ele('customer_nr',klantId);
                 xml.ele('date',plainDate);
                 xml.ele('delivery_date',plainDate);
                 xml.ele('delivery_time',plainDate + ' '+getMinutes);
                 xml.ele('initial_payment_date',plainDate);
-                xml.ele('delivery_method',57); //
                 xml.ele('delivery_floor');
                 xml.ele('payment_condition','0063');
                 xml.ele('currency',0);
@@ -189,7 +203,9 @@ var Generatexml = function () {
                     xml.ele('initial_payment_method',5);
                 }  else if (item.payment_method=='iDEAL') {
                     xml.ele('initial_payment_method',4);
-                }
+                }  else if (item.payment_method=='Bancontact/Mister Cash') {
+					xml.ele('initial_payment_method',5);
+				}
 
 
                 var orderRows =  xml.ele('order_rows')
@@ -200,30 +216,40 @@ var Generatexml = function () {
                     var counter = 1;
                     var priceChecksum='';
                     var wareHouseId = '';
+                   
                     productRows.forEach(function(productItem) {
 
                         // Get some product specs from the feed against the beslist feed
-                        var commission_code = '';
+                         var commission_code = '';
                         var zelfMontage = '';
                         var verzendMethode = '';
 
                         results[1].forEach(function(items) {
                             wareHouseId = items.warehouse;
-                            /* TODO hardcoded getal veranderen in BVB code */
-                            if(items.unieke_code == 8714713046362) { // veranderd bvb code in productie
+                            if(items.unieke_code == productItem.bvb_code) { // veranderd bvb code in productie
                                 commission_code = items.commissiecode;
                                 zelfMontage = items.zelfmontage;
                                 verzendMethode = items.verzendMethode;
                             }
                         });
-
+                        
+                        /*
+                         * Hardcoded
+                         * Als methode bezorgservice is 57
+                         * anders 56
+                         */
+						if(item.verzendmethode=='Bezorgservice') {
+							bezorgCode = 57;
+							
+						}
+		
 
                         var orderRow = orderRows.ele('order_row');
                         orderRow.ele('rownr',counter);
                         orderRow.ele('row_type','R'); // conditie toevoegen
-                        //orderRow.ele('article_nr',productItem.bvb_code);
+                        orderRow.ele('article_nr',productItem.bvb_code);
                         // de bvb code
-                        orderRow.ele('article_nr',202506594); // verander artikel nr in productie
+                        
                         orderRow.ele('description',productItem.product_name);
                         orderRow.ele('vat_code',2);
                         orderRow.ele('price',productItem.price.toFixed(4).replace('.',','));
@@ -231,7 +257,12 @@ var Generatexml = function () {
                         orderRow.ele('discount','0,0000');
                         orderRow.ele('quantity',productItem.number_orderd);
                         orderRow.ele('warehouse',wareHouseId);
-                        orderRow.ele('commission_code',commission_code);
+                        if(commission_code ==2 ) {
+                    	 	orderRow.ele('commission_code',1);
+	                    } else {
+	                    	 orderRow.ele('commission_code',commission_code);
+	                    }
+	                    
                         if(zelfMontage == 'Ja') {
                             counter++;
                             var zelfMontageRow = orderRows.ele('order_row');
@@ -250,13 +281,16 @@ var Generatexml = function () {
                     shippingRow.ele('article_nr',4);
                     shippingRow.ele('description','verzendkosten');
                     shippingRow.ele('warehouse',wareHouseId);
-                    shippingRow.ele('commission_code',1);
+            	 	shippingRow.ele('commission_code',1);
+    
                     shippingRow.ele('quantity','1,000');
                     shippingRow.ele('vat_code',2);
-                    shippingRow.ele('price',totalShopAmount.toFixed(4).replace('.',','));
-                    var checkSum = generateOrderChecksum(plainDate+57+ priceChecksum+totalShopAmount.toFixed(4).replace('.',','),klantId);
+                    shippingRow.ele('price',plainShippingPrice.toFixed(4).replace('.',','));
+                    xml.ele('delivery_method',bezorgCode);
+                    var checkSum = generateOrderChecksum(plainDate+bezorgCode+ priceChecksum+plainShippingPrice.toFixed(4).replace('.',','),klantId);
+       
                     // schiet de order naar colijn
-
+                    console.log(xml.end({ pretty: true}));
                     ColijnApiService.addOrder(xml.end({ pretty: false}),checkSum,function(orderRes){
                         parseXmlString(orderRes, function (err, result) {
                             if(typeof result !== 'undefined') {
@@ -265,7 +299,7 @@ var Generatexml = function () {
                                     var apiResponse = parseInt(result.root.order_nr[0]);
                                     if (!isNaN(apiResponse)) {
                                         log.info("order toegevoegd, api response : " + apiResponse);
-                                        //console.log("UPDATE orders SET response_code='" + apiResponse + "' ,error_message=''  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'");
+                                     
                                         connection.query("UPDATE orders SET response_code='" + apiResponse + "' ,error_message=''  WHERE order_number='" + item.order_number + "' AND fk_branch_id='"+item.fk_branch_id+"'", function (updateErr, updateRes) {
                                             if (updateErr) throw updateErr;
 

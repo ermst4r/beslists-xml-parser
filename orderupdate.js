@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var port = process.env.PORT || 3000;        // set our port
 var http = require('http');
+var request = require('request');
 var mysql = require('mysql');
 var fs = require('fs')
     , Log = require('log')
@@ -27,9 +28,6 @@ var connection = mysql.createConnection(connectionString);
 connection.connect();
 
 
-Beslist.parseOrders(connection);
-Generatexml.xmlOrderOutput(connection);
-Generatexml.xmlCustomerOutput(connection);
 
 
 var CronJob = require('cron').CronJob;
@@ -39,24 +37,27 @@ new CronJob('* 00 06 * * *', function() {
     Import.parseFeedWrapper(connection);
 }, null, true, 'Europe/Amsterdam');
 
-
-
 /*
   Zorg ervoor dat om de 10 minuten wordt gechecked of er nieuwe data is van beslist
   En schiet deze vervolgens naar Colijn
  */
+
+
+   
 new CronJob('0 */10 * * * *', function() {
     log.info('Polling for new data...');
-    Beslist.parseOrders(connection);
-    Generatexml.xmlOrderOutput(connection);
+  	Beslist.parseOrders(connection);
     Generatexml.xmlCustomerOutput(connection);
 }, null, true, 'Europe/Amsterdam');
 
+    	
+    	
+new CronJob('0 */11 * * * *', function() {
+    log.info('Polling for new data...');
+  	Generatexml.xmlOrderOutput(connection);
+}, null, true, 'Europe/Amsterdam');
 
-/* TODO
- - waardes veranderen bij orders
- - Zorg ervoor dat de priceupdate gescheiden wordt, dat eerst de data wordt toegevoegd en daarna de price update wordt gedaan
- */
+
 
 
 

@@ -205,6 +205,7 @@ var Import = function () {
                                         log.notice(yesterdayRow.unieke_code + "bestaat niet meer in de feed");
                                         BeslistPriceApi.setApiKey(brancheItem.beslist_api_key);
                                         BeslistPriceApi.deliverytimeApi(brancheItem.shop_id,yesterdayRow.unieke_code,'niet leverbaar',function(res) {
+                                        	
                                             if(res.status=='success') {
                                                 log.info('Beslist niet levertijd Call successvol!' + 'Unieke_code : ' + yesterdayRow.unieke_code + ' Niet leverbaar');
                                             }
@@ -268,6 +269,7 @@ var Import = function () {
                                             // Data zit in een callback
                                             // Doe de foutafhandeling
                                             BeslistPriceApi.updatePriceApi(brancheItem.shop_id,uniekeCode,parseFloat(prijs.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,').replace(",",".")),function(res) {
+                                               
                                                 if(typeof res ==='undefined') {
                                                     log.emergency(' FOUT. De API  van beslist geeft geen response terug.');
                                                 } else {
